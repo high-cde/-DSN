@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Netkali DSN Wallet</title>
+  <style>
+    body { background:#050510; color:#e8e8ff; font-family:Arial; padding:20px; }
+    .card { background:#0a0a18; padding:20px; border-radius:12px; max-width:420px; }
+    h1 { color:#7f5bff; }
+    code { color:#9cf; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Netkali DSN Wallet</h1>
+
+  <p><strong>Wallet ufficiale:</strong><br>
+  <code id="wallet">0xfc90516a1f736FaC557e09D8853dB80dA192c296</code></p>
+
+  <p><strong>Saldo DSN:</strong> <span id="dsn">Caricamento…</span></p>
+  <p><strong>Valore in €:</strong> <span id="eur">Caricamento…</span></p>
+  <p><strong>Valore in $:</strong> <span id="usd">Caricamento…</span></p>
+</div>
+
+<script>
+const wallet = "0xfc90516a1f736FaC557e09D8853dB80dA192c296";
+const token = "0x04c3be465e530b0a7617b197a91fcd990154027f";
+
+async function load() {
+  const balance = await fetch("https://polygon-rpc.com", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "eth_call",
+      params: [{
+        to: token,
+        data: "0x70a08231000000000000000000000000" + wallet.slice(2)
+      }, "latest"]
+    })
+  }).then(r => r.json());
+
+  const raw = parseInt(balance.result, 16) / 1e18;
+  document.getElementById("dsn").innerText = raw.toFixed(4) + " DSN";
+
+  const price = await fetch("https://api.dexscreener.com/latest/dex/tokens/" + token)
+    .then(r => r.json());
+
+  const p = price.pairs[0];
+  const eur = raw * p.priceUsd * 0.92;
+  const usd = raw * p.priceUsd;
+
+  document.getElementById("eur").innerText = eur.toFixed(2) + " €";
+  document.getElementById("usd").innerText = usd.toFixed(2) + " $";
+}
+
+load();
+setInterval(load, 15000);
+</script>
+
+</body>
+</html>
